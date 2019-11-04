@@ -26,12 +26,6 @@ def get_registrant_docs(reg_id):
     return r.json()['REGISTRANTDOCS']['ROW']
 
 
-def is_since_today(date_stamped_str):
-    date_stamped = parser.parse(date_stamped_str).date()
-
-    return date_stamped >= date.today()
-
-
 # https://alexwlchan.net/2017/07/listing-s3-keys/
 def get_s3_keys():
     """Generate all the keys in an S3 bucket."""
@@ -116,10 +110,8 @@ def main():
     docs = get_registrant_docs(5483)
 
     stored_docs = [d for d in get_s3_keys()]
-
     new_docs = [
-        d for d in docs if is_since_today(d['Date_Stamped'])
-        and get_file_name(d['Url']) not in stored_docs
+        d for d in docs if get_file_name(d['Url']) not in stored_docs
     ]
 
     if len(new_docs) > 0:
