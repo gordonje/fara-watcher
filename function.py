@@ -6,12 +6,7 @@ from dateutil import parser
 import requests
 
 
-AWS_REGION = "us-east-1"
-EMAIL_RECIPIENTS = (
-    'gordonj@missouri.edu',
-    'kielyk@missouri.edu',
-    'elisevmulligan@gmail.com',
-)
+RECIPIENTS = (r.strip() for r in open(".recipients"))
 
 
 def get_registrant_docs(reg_id):
@@ -29,7 +24,7 @@ def get_registrant_docs(reg_id):
 # https://alexwlchan.net/2017/07/listing-s3-keys/
 def get_s3_keys():
     """Generate all the keys in an S3 bucket."""
-    s3 = boto3.client('s3', region_name=AWS_REGION)
+    s3 = boto3.client('s3')
     kwargs = {'Bucket': 'fara-watcher'}
     while True:
         resp = s3.list_objects_v2(**kwargs)
@@ -52,7 +47,7 @@ def get_file_name(url):
 def copy_to_s3(url):
     content = requests.get(url).content
     file_name = get_file_name(url)
-    s3 = boto3.client('s3', region_name=AWS_REGION)
+    s3 = boto3.client('s3')
     obj = s3.put_object(
         ACL='public-read',
         Body=requests.get(url).content,
@@ -90,7 +85,7 @@ def format_message(context):
 
 def send_email(recipient, message):
     # From AWS SES docs: https://docs.aws.amazon.com/ses/latest/DeveloperGuide/send-using-sdk-python.html
-    ses = boto3.client('ses', region_name=AWS_REGION)
+    ses = boto3.client('ses')
     try:
         response = ses.send_email(
             Destination={
@@ -123,7 +118,7 @@ def main():
             context['s3_url'] = get_s3_url(file_name)
             msg = format_message(context)
             
-            for recipient in EMAIL_RECIPIENTS:
+            for recipient in get_recipients():
                 send_email(recipient, msg)
 
     return {'message' : f"Count new docs: {len(new_docs)}"}  
